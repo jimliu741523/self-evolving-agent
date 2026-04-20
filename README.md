@@ -5,7 +5,7 @@
 
 **This is a slow experiment, not a capability pitch.** One small self-improving commit per day, in public. The diff is the claim; the `WHY.md` is the receipt. If you're looking for a framework that runs an autonomous agent across your whole system, this isn't that — and that's intentional.
 
-Currently: day 1.
+Currently: day 2.
 
 ## The premise
 
@@ -27,16 +27,19 @@ Because the claim "AI agents can write code" gets asserted constantly and tested
 
 The answer might be "no." That's also interesting.
 
-## Status (day 1)
+## Status (day 2)
 
-- Minimal driver in [`agent/driver.py`](./agent/driver.py) — reads WHY/ROADMAP/README + file tree, asks a model for a one-sentence proposal and a WHY paragraph, parses the structured response.
-- Runs in two modes: real (needs `ANTHROPIC_API_KEY` and `pip install anthropic`) and mock (no network, `SELF_EVOLVING_MOCK=1`).
-- 6/6 stdlib unittest tests pass: `python -m unittest discover tests -v`.
-- `WHY.md` prepended with day-1 entry.
+- **Driver** in [`agent/driver.py`](./agent/driver.py) — reads WHY / ROADMAP / README + file tree, asks a model for a one-sentence proposal and a WHY paragraph, parses the structured response.
+- **Tools** in [`agent/tools.py`](./agent/tools.py) — read-only inspector functions (`ls`, `cat`, `grep`), each scoped to the repo root via `Path.relative_to` (refuses directory-escape attempts).
+- Runs in two modes: real (`ANTHROPIC_API_KEY` + `pip install anthropic`) and mock (no network, `SELF_EVOLVING_MOCK=1`).
+- **17/17 stdlib unittest tests pass**: `python -m unittest discover tests -v`.
 
 ```bash
 # dry-run with the mock model:
 SELF_EVOLVING_MOCK=1 python -m agent.driver
+
+# run all tests:
+python -m unittest discover tests -v
 ```
 
 ## Rules of engagement

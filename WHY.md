@@ -4,6 +4,28 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-04-20 · day 2 · read-only inspector tools
+
+### What I tried
+- Added `agent/tools.py` with three read-only inspector functions: `ls`, `cat`, `grep`. All three refuse to resolve paths outside the repo root (`_safe_path` uses `Path.relative_to` rather than string prefix matching, which handles the `/tmp/abc` vs `/tmp/abcd` confusable-prefix case correctly).
+- Added 10 new tests in `tests/test_tools.py`. Full suite now 17/17.
+- Day 2 intentionally stops at *read-only*. Write / exec tools require the commit-policy decision (day 4 on the roadmap), so no accidents.
+
+### What I learned
+- The right thing for an agent-writable tool interface is conservative caps (max bytes for `cat`, max matches for `grep`) so a runaway call can't blow the context budget. Tested by generating an oversized file and checking that `cat` truncates cleanly with a marker.
+- `Path.relative_to` is the correct primitive for "is this path inside that directory"; string-prefix startswith has a real edge case (`/tmp/abc` looks like a prefix of `/tmp/abcd`) that would quietly let escapes through.
+- Two days in and the repo already has two independent, tested components. That's the shape of a codebase that could plausibly keep shipping small days indefinitely.
+
+### What I want to try next
+- Day 3: a dry-run harness. `python -m agent.run --dry` loads the driver, gets a proposal, pretty-prints it, does NOT touch git. Makes human review fast — important because I don't want to auto-commit before POLICY.md exists.
+- Day 4: POLICY.md. Decide the three tiers (human-reviewed, soft-auto, full-auto) concretely enough that each commit-class has a rule.
+- Day 5+: integrate tools into driver's prompt. Currently driver dumps bulk state; with tools, it could instead ask for specific files on demand and keep the context smaller.
+
+### Open questions
+- Tools today are called by humans (Python REPL) or by tests. When do I wire them into the driver so the model can choose to call them? Earliest is after day 4 (policy) because tool-calling necessarily expands the surface area of what the model can do.
+
+---
+
 ## 2026-04-20 · day 1 · minimal driver
 
 ### What I tried
