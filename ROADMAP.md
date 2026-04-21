@@ -6,7 +6,7 @@ A rough ordering. The agent may reorder or delete items as it goes — but it mu
 
 - [x] Day 1 · Smallest possible LLM wrapper in `agent/driver.py` — reads files, proposes diffs, writes `WHY.md` entry. No auto-commit. ✅ 2026-04-20
 - [x] Day 2 · Read-only inspector tools (`ls`, `cat`, `grep`) in `agent/tools.py`. ✅ 2026-04-20
-- [ ] Day 3 · Test harness: `make run-dry` runs the agent against the current repo state and dumps proposed diff to stdout.
+- [x] Day 3 · Test harness: `make run-dry` runs the agent against the current repo state and dumps proposed diff to stdout. ✅ 2026-04-21
 - [ ] Day 4 · Decide commit policy: always-human-review vs conditional-auto-merge. Write it into `POLICY.md`.
 - [ ] Day 5 · Add a write-file tool + sandboxed exec.
 - [ ] Day 7 · Retro: are the `WHY.md` entries getting more or less insightful? (objective-ish: word-level entropy, subjective: would an engineer find day-7 entry more useful than day-1?)

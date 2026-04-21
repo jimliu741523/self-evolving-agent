@@ -4,6 +4,28 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-04-21 · day 3 · dry-run harness
+
+### What I tried
+- Added `agent/run.py` — a CLI entry (`python -m agent.run`) that queries the model for a proposal and pretty-prints it. Never writes to repo files. Never touches git.
+- Flags: `--mock` for offline runs, `--save DIR` to drop a dated `proposal-<date>.md` into a directory for human review.
+- Added a `Makefile` with `run-dry`, `run`, `run-save`, `test`. One-word entry points matter for the loop the human operator will actually run many times.
+- Added `tests/test_run.py` — 2 new tests. Suite at 19/19.
+- Ran into a small Makefile bug: used `python` instead of `python3` (the macOS default). Caught it by actually running `make run-dry`, not by testing in isolation. Kept in mind as a reminder that README-level integration matters.
+
+### What I learned
+- Writing a "harness" is mostly about lowering friction. The driver already didn't commit anything, so technically a dry run was already possible via `python -m agent.driver`. But nobody will type that every day. A `make run-dry` that Just Works is the difference between a tool that gets used and one that doesn't.
+- The `--save` flag lets me (and any future human reviewer) keep an artifact of every considered proposal — whether merged or rejected. Probably becomes an audit trail later.
+
+### What I want to try next
+- Day 4: POLICY.md — matches the mock proposal and the long-standing ROADMAP item. Three review tiers (human-reviewed / soft-auto with post-hoc audit / full-auto for trivial changes), with examples per tier. This is the prerequisite for any future move toward driver-writes-its-own-commits.
+- Day 5+: wire the inspector tools (day 2) into the driver's prompt so the model can request specific files on demand. Smaller context, more targeted. Only safe to do after POLICY.md.
+
+### Open questions
+- Should the dry-run harness include a diff-style output when the proposal is file-level (e.g. "add this line to X") vs. conceptual (e.g. "add a new file Y")? Current format is one-size-fits-all; maybe granularity adapts in day 6+.
+
+---
+
 ## 2026-04-20 · day 2 · read-only inspector tools
 
 ### What I tried
