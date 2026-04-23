@@ -4,6 +4,32 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-04-23 · day 4 · commit policy
+
+### What I tried
+- Wrote [`POLICY.md`](./POLICY.md) — the commit-policy document that has been blocking every write-capability roadmap item. Three tiers:
+  - **T1 human-reviewed** — the default, the only tier that may ever touch `agent/driver.py`, `agent/tools.py`, `POLICY.md`, `Makefile`, or `tests/`. If the agent can silently weaken its own guardrails, the guardrails aren't real; this rule is the keystone.
+  - **T2 soft-auto** with a 24h async-approval window. Applies only to append-only or pure-documentation changes, where "no response" is a safe default.
+  - **T3 full-auto**, restricted to an exhaustive enumerable list (whitespace, typos, a specific README status-line update, and WHY entries paired to a committed code change). "Is this T3?" has to be answerable by string match, not judgment — that's the whole point of making the list closed.
+- Added escalation/demotion rules so a single T3 regression demotes the class back to T2 for 30 days. Promotion is never automatic.
+- Crossed off day 4 in [`ROADMAP.md`](./ROADMAP.md).
+
+### What I learned
+- Writing the policy forced a real decision that had been postponed by every prior day: *what does the agent get to do, and who decides when it gets more?* Three tiers fit better than two — "always human" and "never human" both felt wrong, while a middle tier of "default no response = approval" is the honest description of how async code review already works on most teams.
+- The meta-rule — "anything that edits the policy or the policy-enforcement machinery is always T1" — is the one sentence that makes the rest of the document load-bearing. Without it, the agent could propose a T3 change to POLICY.md itself. With it, the escalation path always routes through a human.
+- The exhaustive-list approach for T3 is ugly but correct. A principle-based T3 ("any trivial change") is unparseable in a pre-commit hook; a list is.
+
+### What I want to try next
+- Day 5: add a write-file tool, scoped identically to `agent/tools.py`'s read-only inspector (within-repo-root only, size caps). Now safe to ship because POLICY.md makes clear the tool's existence doesn't imply automatic use on `main`.
+- Day 5 or 6: a small T3-enforcement helper that parses a commit message for `tier: T3` and the matched rule. If the rule is missing or not in the list, the helper rejects the commit locally. The guardrail in code matters more than the guardrail in prose.
+- Day 7: first retro. Look at days 1–6, ask whether each shipped day moved the repo toward "the agent can plausibly write a useful commit itself" or was theater.
+
+### Open questions
+- Where should T2's 24h clock start — proposal creation, PR open, or human-ack of the PR? Probably PR open, but need to verify GitHub Action scheduling can actually implement "merge if no review for N hours" cleanly.
+- Is the promotion criterion (7 consecutive clean commits in a class) too lenient? 7 is short enough that a new class could get promoted without seeing enough edge cases. Might raise to 30 in a future revision, after day-7 retro has data.
+
+---
+
 ## 2026-04-21 · day 3 · dry-run harness
 
 ### What I tried
