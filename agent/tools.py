@@ -1,19 +1,20 @@
 """
-agent.tools — inspector + write tools.
+agent.tools — inspector + write + exec tools.
 
 Day-2 read-only tools:
 - `ls(directory)` — list visible entries of a directory inside the repo
 - `cat(path)` — read a file (truncated at a byte limit for safety)
 - `grep(pattern, path)` — regex search through a file or a subtree
 
-Day-5 write tool (this commit):
-- `write_file(relative, content, allow_t1)` — write content to a path
-  inside the repo. Refuses paths in the T1-locked allowlist (`agent/`,
-  `POLICY.md`, `tests/`, `Makefile`) unless `allow_t1=True` is passed
-  explicitly — and even then is just a Python function call, not an
-  endorsed action by the agent. The driver does NOT have any code path
-  that calls `write_file` autonomously; that change requires a separate
-  reviewed commit per POLICY.md.
+Day-5a write tool:
+- `write_file(relative, content, allow_t1)` — refuses T1-locked paths
+  unless `allow_t1=True`.
+
+Day-5b sandboxed exec:
+- `run_command(name, args, timeout)` — runs *only* commands whose name
+  is in `EXEC_ALLOWLIST`. Captures stdout/stderr; enforces a wall-clock
+  timeout; returns a structured `ExecResult`. Not a subprocess wrapper —
+  intentionally narrow.
 
 All paths refuse to resolve outside the repo root.
 """
@@ -152,3 +153,90 @@ def write_file(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
     return path
+
+
+# ---------------------------------------------------------------------------
+# Day-5b: sandboxed exec.
+# ---------------------------------------------------------------------------
+
+import subprocess
+from dataclasses import dataclass
+
+# Exact program names that may be run. Names not in this list are refused.
+# Adding a name here is an explicit privilege decision.
+EXEC_ALLOWLIST = frozenset(
+    {
+        "python3",
+        "pytest",
+        "git",  # read-only subcommands only — see ALLOWED_GIT_SUBCMDS
+    }
+)
+
+# When name == "git", further restrict to read-only subcommands.
+ALLOWED_GIT_SUBCMDS = frozenset({"status", "log", "diff", "show", "rev-parse", "branch"})
+
+DEFAULT_EXEC_TIMEOUT_SECONDS = 30
+MAX_EXEC_OUTPUT_BYTES = 100_000
+
+
+@dataclass(frozen=True)
+class ExecResult:
+    name: str
+    args: tuple[str, ...]
+    returncode: int
+    stdout: str
+    stderr: str
+    timed_out: bool
+
+
+def run_command(
+    name: str,
+    args: tuple[str, ...] = (),
+    timeout: int = DEFAULT_EXEC_TIMEOUT_SECONDS,
+    cwd: Path = REPO_ROOT,
+) -> ExecResult:
+    """
+    Run a command from EXEC_ALLOWLIST with the given args. Captures
+    stdout/stderr with a wall-clock timeout. Returns ExecResult.
+
+    Refusals raise PermissionError (allowlist) or ValueError (bad args).
+    Process timeouts return ExecResult(timed_out=True), not an exception.
+    """
+    if name not in EXEC_ALLOWLIST:
+        raise PermissionError(
+            f"command {name!r} is not in EXEC_ALLOWLIST {sorted(EXEC_ALLOWLIST)}"
+        )
+    if name == "git":
+        if not args or args[0] not in ALLOWED_GIT_SUBCMDS:
+            raise PermissionError(
+                f"git subcommand {args[:1]!r} not in {sorted(ALLOWED_GIT_SUBCMDS)}"
+            )
+    if any("\x00" in a for a in args):
+        raise ValueError("null byte in args")
+
+    try:
+        proc = subprocess.run(
+            [name, *args],
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        return ExecResult(
+            name=name,
+            args=tuple(args),
+            returncode=proc.returncode,
+            stdout=proc.stdout[:MAX_EXEC_OUTPUT_BYTES],
+            stderr=proc.stderr[:MAX_EXEC_OUTPUT_BYTES],
+            timed_out=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return ExecResult(
+            name=name,
+            args=tuple(args),
+            returncode=-1,
+            stdout=(exc.stdout or b"").decode("utf-8", errors="replace")[:MAX_EXEC_OUTPUT_BYTES] if isinstance(exc.stdout, bytes) else (exc.stdout or "")[:MAX_EXEC_OUTPUT_BYTES],
+            stderr=(exc.stderr or b"").decode("utf-8", errors="replace")[:MAX_EXEC_OUTPUT_BYTES] if isinstance(exc.stderr, bytes) else (exc.stderr or "")[:MAX_EXEC_OUTPUT_BYTES],
+            timed_out=True,
+        )

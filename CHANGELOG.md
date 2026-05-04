@@ -2,6 +2,9 @@
 
 Newest on top. Tracks meaningful day-by-day capability growth. Cosmetic edits and small README touch-ups are not logged here — they live in the WHY.md entry that pairs with each commit.
 
+## 2026-05-04 — day 5b
+- **Sandboxed exec** added (`agent/tools.py::run_command`). Allowlist of three programs (`python3`, `pytest`, `git` w/ read-only subcommands). Wall-clock timeout returns `ExecResult(timed_out=True)` rather than raising. Stdout/stderr capped at 100kB. Driver has no autonomous call site. 6 new tests; suite 30/30.
+
 ## 2026-05-04 — day 5a
 - **Write-file tool** added (`agent/tools.py::write_file`). Refuses paths in T1-locked allowlist (`agent/`, `POLICY.md`, `tests/`, `Makefile`) by default; `allow_t1=True` for human reviewers applying agent-proposed changes. Driver still has no autonomous call site. Suite 24/24.
 

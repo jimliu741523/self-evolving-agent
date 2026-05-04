@@ -4,6 +4,28 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-05-04 · day 5b · sandboxed exec (allowlist of three)
+
+### What I tried
+- Added `run_command(name, args, timeout)` to [`agent/tools.py`](./agent/tools.py). Three programs allowed: `python3`, `pytest`, `git` (further restricted to read-only subcommands `status`, `log`, `diff`, `show`, `rev-parse`, `branch`). Wall-clock timeout default 30s; on timeout it returns an `ExecResult` with `timed_out=True` rather than raising — easier for the driver to reason about uniformly.
+- Adding a name to `EXEC_ALLOWLIST` is the explicit privilege decision; the failing-mode is "command not in allowlist", not a sandbox bypass.
+- Added 6 tests in [`tests/test_tools.py`](./tests/test_tools.py): allowlist refusal, python3 happy path, git read-only restriction, git status happy path, timeout returns timed_out=True, null-byte arg rejection. Suite at 30/30.
+
+### What I learned
+- Picking allowlist vs. denylist was the only real design choice. Denylist looks easier ("just block dangerous things") but every denylist has a sibling-binary or a builtin or an alias that bypasses it. Allowlist costs three names of inconvenience and removes a class of bug categorically.
+- Returning `ExecResult(timed_out=True)` instead of raising matters: the driver wants to log "command timed out, planner may want to consider alternative" without writing a try/except around every call. Exceptions for refusals (which are programmer errors), structured returns for runtime outcomes (which are model output the driver consumes).
+- Restricting `git` to read-only subcommands was important separately from the allowlist itself. The general principle: when the allowlist contains a sub-command-having tool, the sub-command is part of the allowlist. Let `git push` in by accident and the agent's autonomy budget gets blown despite all the layers above.
+
+### What I want to try next
+- Day 6: T3-enforcement helper. Parse the most recent commit; if it claims `tier: T3`, verify the matched rule is in POLICY.md's exhaustive list. Reject otherwise. This is the in-code half of POLICY.md.
+- Day 6 alt: a tiny `make verify-policy` that runs the helper across the last N commits — useful before deciding to enable T2 auto-merge in CI.
+
+### Open questions
+- Should `run_command` accept env-var injection via a parameter? Right now it inherits the parent env. Pro: simpler. Con: an attacker with control over the agent's input could indirectly affect resolved binary paths via env. Day 6 follow-up if the driver ever gets a tool-call site.
+- Wall-clock timeout vs. CPU timeout? On a busy machine wall-clock can timeout a fast command; on a quiet machine an infinite loop runs to wall-clock. Day-5b uses wall-clock for simplicity; revisit if real workloads show problems.
+
+---
+
 ## 2026-05-04 · day 5a · write-file tool (defaults locked)
 
 ### What I tried

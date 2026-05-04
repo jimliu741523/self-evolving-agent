@@ -5,7 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent.tools import ls, cat, grep, write_file, MAX_CAT_BYTES, MAX_WRITE_BYTES
+from agent.tools import (
+    ls, cat, grep, write_file, run_command,
+    MAX_CAT_BYTES, MAX_WRITE_BYTES, EXEC_ALLOWLIST,
+)
 
 
 class TestLs(unittest.TestCase):
@@ -118,6 +121,43 @@ class TestWriteFile(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
                 write_file("big.txt", "x" * (MAX_WRITE_BYTES + 1), root=Path(d))
+
+
+class TestRunCommand(unittest.TestCase):
+    def test_refuses_command_outside_allowlist(self):
+        with self.assertRaises(PermissionError):
+            run_command("rm")
+        with self.assertRaises(PermissionError):
+            run_command("/bin/sh")
+
+    def test_python3_echo_runs(self):
+        r = run_command("python3", ("-c", "print('hi')"))
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("hi", r.stdout)
+        self.assertFalse(r.timed_out)
+
+    def test_git_only_read_subcommands(self):
+        with self.assertRaises(PermissionError):
+            run_command("git", ("commit", "-m", "x"))
+        with self.assertRaises(PermissionError):
+            run_command("git", ("push",))
+
+    def test_git_status_runs(self):
+        r = run_command("git", ("status",))
+        self.assertEqual(r.returncode, 0)
+
+    def test_timeout_returns_timed_out(self):
+        r = run_command(
+            "python3",
+            ("-c", "import time; time.sleep(5)"),
+            timeout=1,
+        )
+        self.assertTrue(r.timed_out)
+        self.assertEqual(r.returncode, -1)
+
+    def test_null_byte_rejected(self):
+        with self.assertRaises(ValueError):
+            run_command("python3", ("-c\x00", ""))
 
 
 if __name__ == "__main__":
