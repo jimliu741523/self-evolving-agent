@@ -5,6 +5,8 @@
 
 **This is a slow experiment, not a capability pitch.** One small self-improving commit per day, in public. The diff is the claim; the `WHY.md` is the receipt. If you're looking for a framework that runs an autonomous agent across your whole system, this isn't that — and that's intentional.
 
+**How this differs from "Claude-native multi-agent" frameworks** (e.g. `ruflo`, the various Codex/Claude orchestration platforms): those projects scale *outward* — many agents, many tasks, many tools across many systems. This project scales *inward* — one agent, one repo, one small change per day, with every change reviewed by a human until POLICY.md says otherwise. Both have a place; the orchestration projects answer "how do I run agents in production?", this one answers "what does it look like for a single agent to actually improve itself, transparently, over months?"
+
 Currently: day 6.
 
 ## The premise
