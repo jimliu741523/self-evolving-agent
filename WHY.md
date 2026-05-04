@@ -4,6 +4,27 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-05-04 · day 6 · T3 enforcement helper
+
+### What I tried
+- Added [`agent/policy.py`](./agent/policy.py): a pair of pure functions, `parse_commit_message(msg) -> CommitClaim` and `check_claim(claim) -> CheckResult`, plus a `verify_message` one-call wrapper. Tier T3 claims that omit a `rule:` line, or claim a rule not in the exhaustive `T3_RULES` set, are rejected with a one-line cause.
+- Added [`tests/test_policy.py`](./tests/test_policy.py) — 11 new tests covering well-formed parses, malformed parses, all four T3 rules from POLICY.md, plus T1 / no-claim defaults. Suite at 41/41.
+- Crossed off ROADMAP day 6.
+
+### What I learned
+- The decision worth writing down: parser and checker stay separate. Parsing is permissive (returns `None` fields for anything missing or malformed); checking is strict (returns `CheckResult(ok=False, reason=...)`). Mixing the two would have made the function un-reusable for "what does this commit *claim*?" inspection without enforcement.
+- `T3_RULES` is a frozenset literal, not a list. Two reasons: deterministic membership check, and any extension is a code change (which under POLICY.md is a T1 change because `agent/` is locked) — exactly the property the rule list needs.
+- The result type pattern (`CheckResult(ok, reason)`) is the same shape used in `run_command`'s `ExecResult` from day 5b. Worth adopting consistently when the caller wants to handle outcomes uniformly without exception plumbing.
+
+### What I want to try next
+- Day 6.5 (incremental): `make verify-policy` that walks the last 50 commits and runs `verify_message`. Useful before deciding to enable T2 auto-merge in CI — we want to see how often current human-written messages would pass.
+- Day 7: retro on entries 1–6. By the metric "would a fresh reader skim WHY.md and feel the agent is getting *more useful*, not just *longer*?" — does day 6 still earn its place?
+
+### Open questions
+- Should the helper *also* enforce a `Co-Authored-By:` line for T3 commits? POLICY.md doesn't require it explicitly, but every T3 commit is by definition agent-authored, and a missing trailer would be the most likely sign that the policy was bypassed. Punt to a future day; the day-6 helper stays minimal.
+
+---
+
 ## 2026-05-04 · day 5b · sandboxed exec (allowlist of three)
 
 ### What I tried

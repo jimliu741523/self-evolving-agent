@@ -5,7 +5,7 @@
 
 **This is a slow experiment, not a capability pitch.** One small self-improving commit per day, in public. The diff is the claim; the `WHY.md` is the receipt. If you're looking for a framework that runs an autonomous agent across your whole system, this isn't that — and that's intentional.
 
-Currently: day 5b.
+Currently: day 6.
 
 ## The premise
 
@@ -27,7 +27,7 @@ Because the claim "AI agents can write code" gets asserted constantly and tested
 
 The answer might be "no." That's also interesting.
 
-## Status (day 5b)
+## Status (day 6)
 
 - **Driver** in [`agent/driver.py`](./agent/driver.py) — reads WHY / ROADMAP / README + file tree, asks a model for a one-sentence proposal and a WHY paragraph, parses the structured response.
 - **Tools** in [`agent/tools.py`](./agent/tools.py) — inspector functions (`ls`, `cat`, `grep`) plus a write tool (`write_file`). All path-checked via `Path.relative_to`. `write_file` refuses T1-locked paths (`agent/`, `POLICY.md`, `tests/`, `Makefile`) by default; `allow_t1=True` lets a human reviewer apply an agent-proposed change. Driver has no autonomous call to `write_file` — that requires its own reviewed commit.
