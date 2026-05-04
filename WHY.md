@@ -4,6 +4,30 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-05-04 · day 5a · write-file tool (defaults locked)
+
+### What I tried
+- Added `write_file(relative, content, allow_t1=False)` to [`agent/tools.py`](./agent/tools.py). Two safety properties: it refuses paths outside the repo root (same `Path.relative_to` check used by the day-2 read tools), and it refuses paths in a T1-locked allowlist (`agent/`, `POLICY.md`, `tests/`, `Makefile`) unless `allow_t1=True` is passed explicitly.
+- The T1 allowlist mirrors POLICY.md's "always human-reviewed" tier. The override flag exists for the *human* reviewer's convenience (so they can `from agent.tools import write_file; write_file(..., allow_t1=True)` to apply an agent's reviewed proposal). It is not a knob the driver may flip — and `agent/driver.py` has no call to `write_file` at all.
+- Added 5 tests in [`tests/test_tools.py`](./tests/test_tools.py): basic write, parent-creation, escape refusal, T1-lock refusal, T1-override, byte-cap. Suite at 24/24.
+- Crossed off ROADMAP day 5a; split day 5 into 5a (write-file, this commit) and 5b (sandboxed exec, next).
+
+### What I learned
+- The interesting design choice was *not* whether to add a write tool — POLICY.md already cleared that — but where to put the T1 enforcement. Three plausible places: (1) inside `write_file` itself, (2) as a wrapper used by the driver, (3) as a pre-commit hook. I picked (1) because the function is the *narrowest* enforcement point: any caller (driver, test, future helper script, a confused human at the REPL) hits the same check. (2) leaks responsibility to every caller; (3) catches it too late, after the file is already written.
+- Returning a `Path` from `write_file` makes test assertions trivial (`p.read_text()`) — small ergonomics decision but it pays off five times in the tests immediately.
+- `allow_t1=True` is, by design, embarrassing to type. That's the point: a future reviewer reading `write_file("POLICY.md", ..., allow_t1=True)` is forced to mentally acknowledge the override.
+
+### What I want to try next
+- Day 5b: sandboxed exec. Probably a `run_command` that resolves PATH-relative names against a small allowlist (`pytest`, `python -m unittest`, `ls`, `git status`), captures stdout/stderr with a wall-clock cap, and returns a structured result. NOT a general subprocess wrapper.
+- Day 6: T3-enforcement helper. Parse the most recent commit message; if it claims `tier: T3`, verify `rule: <name>` is present and matches the exhaustive list in POLICY.md. Reject otherwise. This is the in-code half of POLICY.md's promise; the prose alone doesn't enforce.
+- Day 7: retro on entries 1–6. Is this log getting *more useful* over time, or just longer?
+
+### Open questions
+- Should `write_file` write atomically (temp file + rename) so a partial-failure can never corrupt the target? For day 5a, no — content is bounded to 200kB and writes are local. Worth revisiting if the agent ever ships writes over a network filesystem.
+- The byte cap is `MAX_WRITE_BYTES = 200_000`. That's bigger than any single source file in this repo today but smaller than e.g. a dumped node_modules cache. Right cap for the next year of growth?
+
+---
+
 ## 2026-04-23 · day 4 · commit policy
 
 ### What I tried

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent.tools import ls, cat, grep, MAX_CAT_BYTES
+from agent.tools import ls, cat, grep, write_file, MAX_CAT_BYTES, MAX_WRITE_BYTES
 
 
 class TestLs(unittest.TestCase):
@@ -86,6 +86,38 @@ class TestGrep(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
                 grep("x", "../escape", root=Path(d))
+
+
+class TestWriteFile(unittest.TestCase):
+    def test_writes_and_creates_parents(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = write_file("notes/x.md", "hello\n", root=root)
+            self.assertTrue(p.exists())
+            self.assertEqual(p.read_text(), "hello\n")
+
+    def test_refuses_escape(self):
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                write_file("../escape.txt", "x", root=Path(d))
+
+    def test_refuses_t1_locked_by_default(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for locked in ("agent/driver.py", "POLICY.md", "tests/foo.py", "Makefile"):
+                with self.assertRaises(PermissionError, msg=locked):
+                    write_file(locked, "x", root=root)
+
+    def test_allow_t1_override_works(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = write_file("POLICY.md", "x", allow_t1=True, root=root)
+            self.assertEqual(p.read_text(), "x")
+
+    def test_size_cap(self):
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                write_file("big.txt", "x" * (MAX_WRITE_BYTES + 1), root=Path(d))
 
 
 if __name__ == "__main__":

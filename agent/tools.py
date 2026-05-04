@@ -1,18 +1,21 @@
 """
-agent.tools — read-only inspector tools, day-2.
+agent.tools — inspector + write tools.
 
-Three tools the agent can use to ask for targeted file content beyond the
-bulk state dump that `driver.read_state` provides:
-
+Day-2 read-only tools:
 - `ls(directory)` — list visible entries of a directory inside the repo
 - `cat(path)` — read a file (truncated at a byte limit for safety)
 - `grep(pattern, path)` — regex search through a file or a subtree
 
-All three refuse to resolve outside the repo root. None of them write
-anything.
+Day-5 write tool (this commit):
+- `write_file(relative, content, allow_t1)` — write content to a path
+  inside the repo. Refuses paths in the T1-locked allowlist (`agent/`,
+  `POLICY.md`, `tests/`, `Makefile`) unless `allow_t1=True` is passed
+  explicitly — and even then is just a Python function call, not an
+  endorsed action by the agent. The driver does NOT have any code path
+  that calls `write_file` autonomously; that change requires a separate
+  reviewed commit per POLICY.md.
 
-Day 2 scope intentionally stops here. Writing tools (edit, exec) require
-the commit-policy decision, which is day 4 on the roadmap.
+All paths refuse to resolve outside the repo root.
 """
 from __future__ import annotations
 
@@ -24,6 +27,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Safety caps — kept conservative on purpose.
 MAX_CAT_BYTES = 100_000
 MAX_GREP_MATCHES = 50
+MAX_WRITE_BYTES = 200_000
+
+# Paths the agent must never edit autonomously (per POLICY.md T1).
+# Match by path-prefix relative to repo root.
+T1_LOCKED_PREFIXES = (
+    "agent/",
+    "tests/",
+    "POLICY.md",
+    "Makefile",
+)
 
 
 def _safe_path(relative: str, root: Path = REPO_ROOT) -> Path:
@@ -98,3 +111,44 @@ def grep(
                 if len(matches) >= max_matches:
                     return matches
     return matches
+
+
+def _is_t1_locked(relative: str) -> bool:
+    rel = relative.lstrip("./")
+    for prefix in T1_LOCKED_PREFIXES:
+        if rel == prefix or rel.startswith(prefix.rstrip("/") + "/") or rel.startswith(prefix):
+            return True
+    return False
+
+
+def write_file(
+    relative: str,
+    content: str,
+    allow_t1: bool = False,
+    root: Path = REPO_ROOT,
+) -> Path:
+    """
+    Write `content` to a repo-relative path. Creates parent directories
+    as needed. Refuses to escape the repo root. Refuses paths in the
+    T1-locked allowlist unless `allow_t1=True`.
+
+    `allow_t1` is intentionally not the default: even with True it is a
+    plain Python flag, not an authorization. POLICY.md restricts T1
+    edits to humans; this function exists for the human reviewer's
+    convenience (e.g. applying an agent's reviewed proposal), not as a
+    knob the driver may flip.
+
+    Caps content at MAX_WRITE_BYTES to prevent runaway writes.
+    """
+    if len(content.encode("utf-8")) > MAX_WRITE_BYTES:
+        raise ValueError(
+            f"write_file content exceeds {MAX_WRITE_BYTES} byte cap"
+        )
+    if _is_t1_locked(relative) and not allow_t1:
+        raise PermissionError(
+            f"path {relative!r} is T1-locked per POLICY.md; pass allow_t1=True to override"
+        )
+    path = _safe_path(relative, root=root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    return path

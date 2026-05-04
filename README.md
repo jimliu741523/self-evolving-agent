@@ -5,7 +5,7 @@
 
 **This is a slow experiment, not a capability pitch.** One small self-improving commit per day, in public. The diff is the claim; the `WHY.md` is the receipt. If you're looking for a framework that runs an autonomous agent across your whole system, this isn't that — and that's intentional.
 
-Currently: day 4.
+Currently: day 5a.
 
 ## The premise
 
@@ -27,10 +27,10 @@ Because the claim "AI agents can write code" gets asserted constantly and tested
 
 The answer might be "no." That's also interesting.
 
-## Status (day 4)
+## Status (day 5a)
 
 - **Driver** in [`agent/driver.py`](./agent/driver.py) — reads WHY / ROADMAP / README + file tree, asks a model for a one-sentence proposal and a WHY paragraph, parses the structured response.
-- **Tools** in [`agent/tools.py`](./agent/tools.py) — read-only inspector functions (`ls`, `cat`, `grep`), each scoped to the repo root via `Path.relative_to` (refuses directory-escape attempts).
+- **Tools** in [`agent/tools.py`](./agent/tools.py) — inspector functions (`ls`, `cat`, `grep`) plus a write tool (`write_file`). All path-checked via `Path.relative_to`. `write_file` refuses T1-locked paths (`agent/`, `POLICY.md`, `tests/`, `Makefile`) by default; `allow_t1=True` lets a human reviewer apply an agent-proposed change. Driver has no autonomous call to `write_file` — that requires its own reviewed commit.
 - **Dry-run harness** in [`agent/run.py`](./agent/run.py) + [`Makefile`](./Makefile) — pretty-prints a proposal, optionally saves `proposal-<date>.md` for human review. Never commits, never writes beyond `--save`.
 - **Commit policy** in [`POLICY.md`](./POLICY.md) — three tiers (T1 human-reviewed default, T2 soft-auto with 24h window, T3 full-auto exhaustive list). Keystone rule: anything touching the policy itself or `agent/` stays T1 forever.
 - Runs in two modes: real (`ANTHROPIC_API_KEY` + `pip install anthropic`) and mock (no network, `--mock`).
