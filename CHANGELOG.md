@@ -2,6 +2,9 @@
 
 Newest on top. Tracks meaningful day-by-day capability growth. Cosmetic edits and small README touch-ups are not logged here — they live in the WHY.md entry that pairs with each commit.
 
+## 2026-05-07 — day 7
+- **Day 7 retro** — no code change. WHY.md entry analyses days 1–6 on two axes: word-level specificity (entries get more code-specific over time; flat word count with rising specificity is the healthy pattern) and subjective utility (each day delivers one load-bearing rule). Names the honest weakness: the log has no failure entries because the commit policy only captures shipped work — "what we ruled out" remains invisible. ROADMAP day 7 ticked. Next planned milestone: day 10 first fully-agent-authored commit.
+
 ## 2026-05-04 — day 6
 - **T3 enforcement helper** in [`agent/policy.py`](./agent/policy.py). Parses `tier:` / `rule:` commit-message trailers and rejects `tier: T3` claims that don't name a rule in POLICY.md's exhaustive list. Pure parser + checker; a pre-commit hook can call it. 11 new tests; suite at 41/41.
 

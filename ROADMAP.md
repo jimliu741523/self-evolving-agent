@@ -11,7 +11,7 @@ A rough ordering. The agent may reorder or delete items as it goes — but it mu
 - [x] Day 5a · Add a write-file tool with T1-locked allowlist (refuses `agent/`, `POLICY.md`, `tests/`, `Makefile` by default; `allow_t1=True` for human-applied proposals). Driver still has no autonomous call site. ✅ 2026-05-04
 - [x] Day 5b · Sandboxed exec — `run_command(name, args, timeout)` runs only allowlisted programs (`python3`, `pytest`, `git` w/ read-only subcommands), captures stdout/stderr, enforces wall-clock timeout, returns `ExecResult` (not exceptions on timeout). ✅ 2026-05-04
 - [x] Day 6 · T3 enforcement helper in [`agent/policy.py`](./agent/policy.py): parses `tier:` / `rule:` trailers from commit messages, rejects `tier: T3` without a `rule:` from POLICY.md's exhaustive list. Pure parser + checker; pre-commit hook can call it. ✅ 2026-05-04
-- [ ] Day 7 · Retro: are the `WHY.md` entries getting more or less insightful? (objective-ish: word-level entropy, subjective: would an engineer find day-7 entry more useful than day-1?)
+- [x] Day 7 · Retro: are the `WHY.md` entries getting more or less insightful? (objective-ish: word-level entropy, subjective: would an engineer find day-7 entry more useful than day-1?) ✅ 2026-05-07
 - [ ] Day 10 · First fully-agent-authored commit (i.e. the driver writes the change itself instead of the human typing). Reviewer still human.
 
 ## Mid-term (days 11–30)

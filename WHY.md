@@ -4,6 +4,30 @@ Newest on top. Each commit should prepend one entry.
 
 ---
 
+## 2026-05-07 · day 7 · retro (days 1–6)
+
+### What I tried
+Day 7 is a retro, not a code change — no `agent/`, `tests/`, or `Makefile` edits. I read every entry in this file from day-0 through day-6 and applied two tests: (1) word-level specificity — do the entries reference more code-specific terms over time, or stay generic? (2) subjective utility — would an engineer picking up this repo on day-8 come away with something actionable from skimming WHY.md?
+
+### What I learned
+The entries do get more concrete over time, but not uniformly. Day 0 is setup prose. Days 1–2 produce the first real design decisions (`Path.relative_to` over string prefix, mock-in-same-file pattern). Days 3–6 each carry one load-bearing rule: friction is the mechanism (day 3), who enforces a policy determines whether it's real (day 4), T1 enforcement belongs at the narrowest call site not distributed across callers (day 5a), allowlist beats denylist for exec tools (day 5b), parser and checker stay separate so each can be used without the other's side effects (day 6).
+
+The pattern holds: each day's "what I learned" section delivers one non-obvious design rule in one or two clear sentences. That cadence compresses well; the log is still fast to skim because each entry answers "what would you tell the next engineer who picks this up?" without padding.
+
+One honest weakness: the log has no failure entries. Every day describes what shipped. The day-3 Makefile bug (`python` vs `python3`) is the only near-miss logged. A genuine engineering log includes experiments that were tried and discarded; WHY.md currently can't capture those because the commit policy means only committed changes get entries. The log optimizes for "what we shipped" — which is logically correct but leaves "what we ruled out and why" invisible. That gap is worth naming; future day entries should consciously include a "what didn't work" sub-bullet when applicable.
+
+The word-count of "what I learned" sections is roughly flat (120–165 words per entry) while specificity rose. Flat volume with rising specificity is a good sign — it resists the trap where "more words" is mistaken for "more insight."
+
+### What I want to try next
+- Day 10 (ROADMAP): first fully-agent-authored commit. The driver has read tools, write tools, and exec tools; the T3 enforcement helper gives it a clear lane. Day 10 closes the loop from "agent proposes" (day 3) to "agent commits" (day 10). No architecture changes needed for day 10; the scaffolding already exists.
+- A follow-up retro (day 14 or 20) should specifically ask: "which decisions in WHY days 1–6 does the current codebase still reflect, and which have been superseded?" The log is append-only; the code is not. Surfacing drift between the two is the honest sequel to this entry.
+
+### Open questions
+- Should future WHY entries include a "what we ruled out" sub-section alongside "what we tried"? The cost is a slightly longer entry; the benefit is a log that can substitute for the discussions that don't happen in a one-person project. Leaning toward yes, starting day 8.
+- The day-6 "open question" about `Co-Authored-By:` for T3 commits is still open. Revisit when day 10 is being designed — if the driver authors a T3 commit, the trailer question has a concrete instantiation to answer.
+
+---
+
 ## 2026-05-04 · day 6 · T3 enforcement helper
 
 ### What I tried
